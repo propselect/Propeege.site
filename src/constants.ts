@@ -41,19 +41,6 @@ export const INITIAL_FIRMS: PropFirm[] = [
     profitSplit: '90%'
   },
   {
-    id: 'myforexfunds',
-    name: 'MyForexFunds',
-    websiteUrl: 'https://myforexfunds.com',
-    logoUrl: 'https://logo.clearbit.com/myforexfunds.com',
-    slug: 'myforexfunds',
-    description: 'Currently facing significant regulatory challenges and operational issues.',
-    pros: ['Used to have low entry fees'],
-    cons: ['Regulatory shutdown', 'Non-functional payouts', 'High risk'],
-    startingBalance: 'N/A',
-    maxLeverage: 'N/A',
-    profitSplit: 'N/A'
-  },
-  {
     id: 'lux-trading',
     name: 'Lux Trading Firm',
     websiteUrl: 'https://luxtradingfirm.com',
@@ -79,6 +66,20 @@ export const INITIAL_FIRMS: PropFirm[] = [
     maxLeverage: '1:100',
     profitSplit: '80%',
     discountCode: 'EDGE'
+  },
+  {
+    id: 'myforexfunds',
+    name: 'MyForexFunds',
+    websiteUrl: 'https://myforexfunds.com',
+    logoUrl: 'https://logo.clearbit.com/myforexfunds.com',
+    slug: 'myforexfunds',
+    description: 'Currently shut down due to regulatory enforcement. No longer operational.',
+    pros: [],
+    cons: ['REGULATORY SHUTDOWN', 'NON-OPERATIONAL', 'FUNDS FROZEN'],
+    startingBalance: 'N/A',
+    maxLeverage: 'N/A',
+    profitSplit: 'N/A',
+    isScam: true
   }
 ];
 

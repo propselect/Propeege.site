@@ -121,7 +121,7 @@ export default function FirmDetail() {
     );
   }
 
-  const dynamicRating = getDynamicRating(avgRating, votes);
+  const dynamicRating = firm.isScam ? 'bad' : getDynamicRating(avgRating, votes);
   const ratingColor = getRatingColor(dynamicRating);
 
   return (

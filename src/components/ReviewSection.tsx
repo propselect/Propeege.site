@@ -4,9 +4,11 @@ import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, delete
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { Review } from '../types';
 import { INITIAL_FIRMS } from '../constants';
-import { MessageSquare, Star, Trash2, ShieldAlert, Send, Edit2, Loader2 } from 'lucide-react';
+import { MessageSquare, Star, Trash2, ShieldAlert, Send, Edit2, Loader2, ImageIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../lib/firebase-errors';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
 
 interface ReviewSectionProps {
   firmId: string;
@@ -18,6 +20,9 @@ export default function ReviewSection({ firmId }: ReviewSectionProps) {
   const [comment, setComment] = React.useState('');
   const [rating, setRating] = React.useState(5);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [imageFiles, setImageFiles] = React.useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editComment, setEditComment] = React.useState('');
@@ -27,6 +32,41 @@ export default function ReviewSection({ firmId }: ReviewSectionProps) {
   const userReview = React.useMemo(() => 
     user ? reviews.find(r => r.userId === user.uid) : null
   , [user, reviews]);
+
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Canvas toBlob failed'));
+        }, 'image/jpeg', 0.7);
+      };
+      img.onerror = reject;
+    });
+  };
 
   React.useEffect(() => {
     const q = query(
@@ -57,6 +97,17 @@ export default function ReviewSection({ firmId }: ReviewSectionProps) {
 
     setIsSubmitting(true);
     try {
+      // Parallel compressed uploads
+      const uploadPromises = imageFiles.map(async (file) => {
+        const compressedBlob = await compressImage(file);
+        const fileName = `${user.uid}_${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+        const storageRef = ref(storage, `audits/${fileName}`);
+        const uploadResult = await uploadBytes(storageRef, compressedBlob);
+        return getDownloadURL(uploadResult.ref);
+      });
+
+      const uploadedImageUrls = await Promise.all(uploadPromises);
+
       // Get the firm name for the audit log metadata
       const firmData = INITIAL_FIRMS.find(f => f.id === firmId || f.slug === firmId);
       const displayFirmName = firmData?.name || 'Unknown Node';
@@ -68,10 +119,13 @@ export default function ReviewSection({ firmId }: ReviewSectionProps) {
         firmName: displayFirmName,
         rating,
         comment: comment.trim(),
+        imageUrls: uploadedImageUrls,
         createdAt: serverTimestamp(),
       });
       setComment('');
       setRating(5);
+      setImageFiles([]);
+      setImagePreviews([]);
     } catch (err) {
       console.error('Failed to submit review:', err);
     } finally {
@@ -231,6 +285,65 @@ export default function ReviewSection({ firmId }: ReviewSectionProps) {
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white text-sm focus:border-emerald-500 outline-none transition-colors placeholder:text-zinc-700 font-bold"
                       />
                     </div>
+                    
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-3">Audit Evidence (Up to 3, Optional)</label>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple
+                        className="hidden" 
+                        ref={fileInputRef}
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length + imageFiles.length > 3) {
+                            alert('Maximum 3 images allowed');
+                            return;
+                          }
+                          
+                          const newFiles = [...imageFiles, ...files].slice(0, 3);
+                          setImageFiles(newFiles);
+                          setImagePreviews(newFiles.map(f => URL.createObjectURL(f)));
+                        }}
+                      />
+                      
+                      <div className="grid grid-cols-3 gap-3 mb-3">
+                        {imagePreviews.map((preview, idx) => (
+                          <div key={idx} className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 aspect-square">
+                            <img src={preview} alt="Preview" className="w-full h-full object-cover opacity-50" />
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                const newFiles = imageFiles.filter((_, i) => i !== idx);
+                                const newPreviews = imagePreviews.filter((_, i) => i !== idx);
+                                setImageFiles(newFiles);
+                                setImagePreviews(newPreviews);
+                              }}
+                              className="absolute top-1 right-1 p-1 bg-zinc-900/80 border border-zinc-800 rounded-full text-rose-500 hover:text-rose-400 transition-colors"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                        {imageFiles.length < 3 && (
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="aspect-square border-2 border-dashed border-zinc-800 rounded-xl text-zinc-600 flex flex-col items-center justify-center gap-1 hover:border-emerald-500/50 hover:text-emerald-500 transition-all font-black text-[8px] uppercase tracking-widest"
+                          >
+                            <ImageIcon size={16} />
+                            Add Proof
+                          </button>
+                        )}
+                      </div>
+                      
+                      {imageFiles.length > 0 && (
+                        <p className="text-[8px] font-bold text-emerald-500/50 uppercase tracking-widest text-center mt-2">
+                           {imageFiles.length} Evidence Node(s) Ready for Transmission
+                        </p>
+                      )}
+                    </div>
+
                     <div className="flex gap-3">
                       <button
                         type="submit"
@@ -312,6 +425,36 @@ export default function ReviewSection({ firmId }: ReviewSectionProps) {
                     <p className="text-zinc-400 text-sm leading-relaxed font-bold tracking-tight">
                       {review.comment}
                     </p>
+
+                    {/* Legacy support for single imageUrl */}
+                    {!review.imageUrls && review.imageUrl && (
+                      <div className="mt-6 rounded-2xl overflow-hidden border border-zinc-800 max-w-sm group/img relative cursor-zoom-in">
+                        <img 
+                          src={review.imageUrl} 
+                          alt="Audit Evidence" 
+                          className="w-full h-auto object-cover transition-transform group-hover/img:scale-105" 
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+
+                    {review.imageUrls && review.imageUrls.length > 0 && (
+                      <div className="mt-6 flex flex-wrap gap-4">
+                        {review.imageUrls.map((url, idx) => (
+                          <div key={idx} className="rounded-2xl overflow-hidden border border-zinc-800 max-w-[200px] grow group/img relative cursor-zoom-in">
+                            <img 
+                              src={url} 
+                              alt={`Audit Evidence ${idx + 1}`} 
+                              className="w-full h-32 object-cover transition-transform group-hover/img:scale-105" 
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md rounded-md border border-white/10 text-[6px] font-black text-white uppercase tracking-widest opacity-0 group-hover/img:opacity-100 transition-opacity">
+                              Proof_{idx + 1}.png
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {(user?.uid === review.userId) && (
                       <div className="absolute bottom-6 right-8 flex items-center gap-4 bg-zinc-950/50 backdrop-blur-sm p-2 rounded-xl border border-zinc-800">

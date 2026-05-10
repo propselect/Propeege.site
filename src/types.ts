@@ -14,6 +14,7 @@ export interface PropFirm {
   profitSplit: string;
   slug: string;
   discountCode?: string;
+  isScam?: boolean;
 }
 
 export interface UserProfile {
@@ -32,6 +33,7 @@ export interface Review {
   fullPath?: string;
   rating: number;
   comment: string;
+  imageUrls?: string[];
   createdAt: any;
 }
 

@@ -310,6 +310,32 @@ export default function MyReviews() {
                       "{review.comment}"
                     </p>
 
+                    {review.imageUrls && review.imageUrls.length > 0 && (
+                      <div className="mb-8 flex flex-wrap gap-3">
+                        {review.imageUrls.map((url: string, idx: number) => (
+                          <div key={idx} className="rounded-xl overflow-hidden border border-zinc-800 w-24 h-24 shrink-0">
+                            <img 
+                              src={url} 
+                              alt={`Audit Evidence ${idx + 1}`} 
+                              className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" 
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {!review.imageUrls && review.imageUrl && (
+                      <div className="mb-8 rounded-2xl overflow-hidden border border-zinc-800 max-w-sm">
+                        <img 
+                          src={review.imageUrl} 
+                          alt="Audit Evidence" 
+                          className="w-full h-auto object-cover opacity-80 hover:opacity-100 transition-opacity" 
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => handleDelete(review)}

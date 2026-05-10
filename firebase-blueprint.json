@@ -39,6 +39,7 @@
         "userName": { "type": "string" },
         "rating": { "type": "number", "minimum": 1, "maximum": 5 },
         "comment": { "type": "string" },
+        "imageUrls": { "type": "array", "items": { "type": "string", "format": "uri" } },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "rating", "comment"]

@@ -92,12 +92,12 @@ export default function FirmCard({ firm, index }: FirmCardProps) {
     }
   };
 
-  const dynamicRating = getDynamicRating(avgRating, votes);
+  const dynamicRating = firm.isScam ? 'bad' : getDynamicRating(avgRating, votes);
   const ratingColor = getRatingColor(dynamicRating);
 
   // Calculate a "Prop Score" out of 10.0
   const scoreFactor = (avgRating * 1.6) + (Math.min(votes / 10, 2));
-  const displayScore = (avgRating === 0 && votes === 0) ? "0.0" : Math.min(scoreFactor, 10.0).toFixed(1);
+  const displayScore = firm.isScam ? "0.0" : ((avgRating === 0 && votes === 0) ? "0.0" : Math.min(scoreFactor, 10.0).toFixed(1));
   
   return (
     <motion.div
