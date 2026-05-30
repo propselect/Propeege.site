@@ -1,4 +1,4 @@
-# Security Specification - PropEdge
+# Security Specification - Halima Professional Salon
 
 ## Data Invariants
 1. A user profile (`/users/{uid}`) must be owned by the authenticated user.

@@ -174,7 +174,7 @@ export const OPENING_HOURS = {
 
 export const CONTACT_INFO = {
   address: 'No 15 Gonan Ganye, Zaria, Kaduna State, Nigeria',
-  phone: '+234 800 000 0000',
-  whatsapp: '+234 800 000 0000',
+  phone: '+234 9027070751',
+  whatsapp: '+234 9027070751',
   email: 'info@halimabeautysalon.ng',
 };
