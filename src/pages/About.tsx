@@ -20,7 +20,7 @@ export const About = () => {
                 Bringing Excellence to <br /> <span className="text-primary italic">Zaria's</span> Beauty Scene
               </h1>
               <p className="text-dark/60 text-lg font-body leading-relaxed max-w-xl">
-                Halima Beauty Salon & Spa was founded with a simple yet powerful mission: to provide world-class beauty care using safe, high-quality products. What started as a passion for hair health has grown into a trusted community hub for wellness and style.
+                Halima Professional Salon was founded with a simple yet powerful mission: to provide world-class beauty care using safe, high-quality products. What started as a passion for hair health has grown into a trusted community hub for wellness and style.
               </p>
               <div className="grid grid-cols-2 gap-8 pt-4">
                 <div className="space-y-2">

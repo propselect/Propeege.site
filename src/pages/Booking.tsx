@@ -41,7 +41,7 @@ export const Booking = () => {
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
 
   const confirmBooking = () => {
-    const message = `Halo Halima Beauty Salon! I'd like to book an appointment:
+    const message = `Hello Halima Professional Salon! I'd like to book an appointment:
 - Services: ${selectedServices.map(s => s.name).join(', ')}
 - Date: ${date}
 - Time: ${time}

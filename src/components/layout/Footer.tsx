@@ -12,7 +12,7 @@ export const Footer = () => {
           <div className="space-y-6">
             <Link to="/" className="flex flex-col">
               <span className="text-2xl font-heading font-bold text-white tracking-wide">HALIMA</span>
-              <span className="text-[10px] font-button tracking-[0.2em] text-primary -mt-1 uppercase">Beauty Salon & Spa</span>
+              <span className="text-[10px] font-button tracking-[0.2em] text-primary -mt-1 uppercase">Professional Salon</span>
             </Link>
             <p className="text-white/60 text-sm leading-relaxed">
               Enhancing your natural beauty and confidence through safe, high-quality, and personalized services in Zaria.
@@ -73,7 +73,7 @@ export const Footer = () => {
         </div>
 
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-white/40 text-xs">
-          <p>© {new Date().getFullYear()} Halima Beauty Salon & Spa. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Halima Professional Salon. All rights reserved.</p>
           <div className="flex space-x-6">
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>

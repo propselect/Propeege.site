@@ -31,9 +31,9 @@ async function startServer() {
     });
 
     const mailOptions = {
-      from: '"Halima Salon" <noreply@halimabeautysalon.ng>',
+      from: '"Halima Professional Salon" <noreply@halimabeautysalon.ng>',
       to: email,
-      subject: "Your Booking Request - Halima Beauty Salon",
+      subject: "Your Booking Request - Halima Professional Salon",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
           <h1 style="color: #E88EA2;">Hello, ${name || "Client"}!</h1>
@@ -45,7 +45,7 @@ async function startServer() {
           </p>
           <hr style="margin: 40px 0; border: none; border-top: 1px solid #edf2f7;" />
           <p style="font-size: 12px; color: #a0aec0;">
-            Halima Beauty Salon & Spa - No 15 Gonan Ganye, Zaria.
+            Halima Professional Salon - No 15 Gonan Ganye, Zaria.
           </p>
         </div>
       `,

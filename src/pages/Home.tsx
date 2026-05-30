@@ -48,9 +48,9 @@ export const Home = () => {
       {/* Hero Section */}
       <section className="relative h-[85vh] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
+            <img 
             src="/src/assets/images/halima_salon_hero_1780137400777.png"
-            alt="Halima Beauty Salon"
+            alt="Halima Professional Salon"
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
@@ -65,8 +65,8 @@ export const Home = () => {
             className="max-w-2xl text-white"
           >
             <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 leading-tight">
-              Halima Beauty <br />
-              <span className="text-primary italic font-serif">Salon & Spa</span>
+              Halima <br />
+              <span className="text-primary italic font-serif">Professional Salon</span>
             </h1>
             <p className="text-xl md:text-2xl font-body text-white/90 mb-10 leading-relaxed max-w-lg">
               Your beauty, our passion. Experience premium hair, skin, and wellness care at No 15 Gonan Ganye, Zaria.

@@ -30,7 +30,7 @@ export const Login = () => {
         <div className="text-center mb-10">
           <Link to="/" className="flex flex-col items-center mb-6">
             <span className="text-3xl font-heading font-bold text-dark tracking-wide">HALIMA</span>
-            <span className="text-[10px] font-button tracking-[0.2em] text-primary -mt-1 uppercase">Beauty Salon & Spa</span>
+            <span className="text-[10px] font-button tracking-[0.2em] text-primary -mt-1 uppercase">Professional Salon</span>
           </Link>
           <h2 className="text-2xl font-heading font-bold text-dark">Admin Access</h2>
           <p className="text-dark/40 text-sm font-body mt-2">Manage your salon operations securely.</p>

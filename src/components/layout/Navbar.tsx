@@ -25,7 +25,7 @@ export const Navbar = () => {
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex flex-col">
               <span className="text-2xl font-heading font-bold text-dark tracking-wide">HALIMA</span>
-              <span className="text-[10px] font-button tracking-[0.2em] text-primary -mt-1 uppercase">Beauty Salon & Spa</span>
+              <span className="text-[10px] font-button tracking-[0.2em] text-primary -mt-1 uppercase">Professional Salon</span>
             </Link>
           </div>
 
