@@ -13,14 +13,14 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
-  app.post("/api/signup-confirmation", async (req, res) => {
-    const { email, name } = req.body;
+  app.post("/api/booking-notification", async (req, res) => {
+    const { email, name, date, service } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
     }
 
-    // Nodemailer setup
+    // Nodemailer setup (optional, for salon admin notification)
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.ethereal.email",
       port: Number(process.env.SMTP_PORT) || 587,
@@ -31,26 +31,21 @@ async function startServer() {
     });
 
     const mailOptions = {
-      from: '"PropEDGE.COM" <noreply@propedge.com>',
+      from: '"Halima Salon" <noreply@halimabeautysalon.ng>',
       to: email,
-      subject: "Welcome to PropEDGE.COM! Your Signup Confirmation",
+      subject: "Your Booking Request - Halima Beauty Salon",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h1 style="color: #1a202c;">Welcome to PropEDGE.COM, ${name || "Trader"}!</h1>
-          <p style="font-size: 16px; color: #4a5568;">
-            Thank you for signing up for the ultimate forex prop firm review platform.
+          <h1 style="color: #E88EA2;">Hello, ${name || "Client"}!</h1>
+          <p style="font-size: 16px; color: #4b2e2a;">
+            We've received your booking request for <strong>${service}</strong> on <strong>${date}</strong>.
           </p>
-          <p style="font-size: 16px; color: #4a5568;">
-            Start exploring our top-rated firms and find the perfect partner for your trading journey on PropEDGE.COM.
+          <p style="font-size: 16px; color: #4b2e2a;">
+            Our team will review the slot and confirm with you via WhatsApp or SMS shortly.
           </p>
-          <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 10px;">
-            <a href="${process.env.APP_URL}/firms" style="text-decoration: none; background-color: #2f855a; color: white; padding: 12px 24px; border-radius: 6px; text-align: center; display: inline-block;">
-              Browse Prop Firms
-            </a>
-          </div>
           <hr style="margin: 40px 0; border: none; border-top: 1px solid #edf2f7;" />
           <p style="font-size: 12px; color: #a0aec0;">
-            If you didn't sign up for this account at PropEDGE.COM, you can safely ignore this email.
+            Halima Beauty Salon & Spa - No 15 Gonan Ganye, Zaria.
           </p>
         </div>
       `,
@@ -59,19 +54,11 @@ async function startServer() {
     try {
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         await transporter.sendMail(mailOptions);
-        console.log(`Confirmation email sent to ${email}`);
-      } else {
-        console.log("--- SIMULATED EMAIL (Missing SMTP Config) ---");
-        console.log(`To: ${email}`);
-        console.log(`Subject: ${mailOptions.subject}`);
-        console.log("------------------------");
       }
-      res.json({ message: "Confirmation email sent" });
+      res.json({ message: "Notification processed" });
     } catch (error) {
       console.error("Error sending email:", error);
-      // Even if email fails, we don't want to crash the signup process for the user
-      // We just log it and send a success response to the client
-      res.json({ message: "Signup successful, though confirmation email failed to send.", warning: "Email delivery failure" });
+      res.json({ message: "Processed with warning" });
     }
   });
 

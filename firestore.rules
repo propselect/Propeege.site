@@ -19,108 +19,36 @@ service cloud.firestore {
       );
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
     // --- Collections ---
-    
-    // Reviews: Public auditing data
-    // Use a unified recursive matcher for all review-related operations
-    match /{path=**}/reviews/{reviewId} {
-      allow get, list: if true;
-      
-      function isValidReview(data) {
-        return isSignedIn() &&
-               data.userId == request.auth.uid &&
-               isValidId(data.userId) &&
-               data.rating is number && data.rating >= 1 && data.rating <= 5 &&
-               data.comment is string && data.comment.size() <= 2000 &&
-               (!('imageUrls' in data) || (data.imageUrls is list && data.imageUrls.size() <= 3));
-      }
 
-      allow create: if isSignedIn() && isValidReview(request.resource.data) && 
-                    (request.resource.data.createdAt == request.time);
-      
-      allow update: if isSignedIn() && 
-                    (isAdmin() || resource.data.userId == request.auth.uid) &&
-                    request.resource.data.userId == resource.data.userId &&
-                    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comment', 'rating', 'updatedAt', 'userName', 'imageUrls'])) &&
-                    (request.resource.data.updatedAt == request.time);
-                    
-      allow delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-    }
-
-    // Admin list check
-    match /admins/{userId} {
-      allow read: if isSignedIn();
-    }
-
-    // Connectivity test path
-    match /test/connection {
-      allow read: if true;
-    }
-
-    // Connectivity test path
-    match /test/connection {
-      allow read: if true;
-    }
-
-    // Firms: Publicly readable, admin-only writes
-    match /firms/{firmId} {
+    // Services: Public read, Admin write
+    match /services/{serviceId} {
       allow read: if true;
       allow write: if isAdmin();
-      // Reviews handled by the recursive block above
     }
 
-    // Reports
-    match /reports/{reportId} {
-      allow create: if isSignedIn();
-      allow read, delete: if isAdmin();
+    // Staff: Public read, Admin write
+    match /staff/{staffId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Votes
-    match /votes/{voteId} {
-      allow list, get: if true;
-      function isValidVote(data) {
-        return isSignedIn() &&
-               data.userId == request.auth.uid &&
-               isValidId(data.userId) &&
-               isValidId(data.firmId);
-      }
-      allow create: if isSignedIn() && 
-                    isValidVote(request.resource.data) &&
-                    voteId == request.auth.uid + "_" + request.resource.data.firmId;
-      allow delete: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+    // Bookings: Public create, Admin read/write
+    match /bookings/{bookingId} {
+      allow create: if true; // Clients can book without accounts
+      allow read, write: if isAdmin();
     }
 
-    // Users: Private data
-    match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      
-      function isValidUser(data) {
-        return data.keys().hasAll(['email', 'uid', 'createdAt']) &&
-               data.email is string && data.email.size() <= 256 &&
-               data.uid == userId;
-      }
-
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && 
-                    isValidUser(request.resource.data) &&
-                    request.resource.data.email == resource.data.email; // Email immutable
-      allow delete: if isOwner(userId) || isAdmin();
+    // Reviews: Public read, Public create, Admin modify
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true; // Clients can leave reviews
+      allow update, delete: if isAdmin();
     }
 
-    // Subscribers: Newsletter
-    match /subscribers/{subscriberId} {
-      allow create: if request.resource.data.email is string && 
-                      request.resource.data.email.size() <= 256 &&
-                      request.resource.data.createdAt == request.time;
-      allow read, list, delete: if isAdmin();
+    // Admins list
+    match /admins/{userId} {
+      allow read: if isSignedIn();
     }
   }
 }

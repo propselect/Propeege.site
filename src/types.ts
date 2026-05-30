@@ -1,45 +1,44 @@
-export type Rating = 'good' | 'medium' | 'bad' | 'unrated';
-
-export interface PropFirm {
+export interface Service {
   id: string;
   name: string;
-  rating?: Rating;
-  websiteUrl: string;
-  logoUrl?: string;
+  category: 'Hair' | 'Skincare' | 'Nails' | 'Spa' | 'Special';
   description: string;
-  pros: string[];
-  cons: string[];
-  startingBalance: string;
-  maxLeverage: string;
-  profitSplit: string;
-  slug: string;
-  discountCode?: string;
-  isScam?: boolean;
+  duration: string;
+  priceRange: string;
+  price: number;
+  benefit: string;
+  image?: string;
 }
 
-export interface UserProfile {
-  uid: string;
-  email: string;
-  displayName?: string;
+export interface Booking {
+  id: string;
+  clientName: string;
+  clientPhone: string;
+  serviceIds: string[];
+  date: string;
+  time: string;
+  staffId?: string;
+  notes?: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  paymentStatus: 'unpaid' | 'paid';
   createdAt: string;
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  specialty: string;
+  image: string;
+  experience: string;
+  bio: string;
 }
 
 export interface Review {
   id: string;
-  userId: string;
-  userName: string;
-  firmId?: string;
-  firmName?: string;
-  fullPath?: string;
+  clientName: string;
+  location: string;
   rating: number;
   comment: string;
-  imageUrls?: string[];
-  createdAt: any;
-}
-
-export interface Vote {
-  id: string;
-  userId: string;
-  firmId: string;
-  createdAt: any;
+  date: string;
+  isVisible: boolean;
 }

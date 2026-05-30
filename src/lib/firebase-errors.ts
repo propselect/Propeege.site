@@ -42,8 +42,8 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     },
     operationType,
     path
-  }
-  const errorString = JSON.stringify(errInfo);
-  console.error('Firestore Error: ', errorString);
-  throw new Error(errorString);
+  };
+  
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
 }

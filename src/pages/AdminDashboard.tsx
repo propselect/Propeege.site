@@ -1,382 +1,207 @@
 import React from 'react';
-import { db, auth } from '../lib/firebase';
-import { collection, query, onSnapshot, doc, setDoc, deleteDoc, orderBy, getDocs } from 'firebase/firestore';
-import { PropFirm, UserProfile } from '../types';
-import { LayoutGrid, Users, Plus, Edit2, Trash2, ShieldCheck, XCircle, Loader2, Database, AlertCircle, Mail } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
+import { 
+  Users, 
+  Settings, 
+  LogOut, 
+  Plus, 
+  Search, 
+  Filter, 
+  MoreVertical, 
+  CheckCircle2, 
+  XCircle,
+  Clock,
+  Calendar,
+  LayoutDashboard,
+  Scissors
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { SERVICES } from '../constants';
 
-interface Subscriber {
-  id: string;
-  email: string;
-  createdAt: any;
-  source: string;
-}
-import { useAuthState } from 'react-firebase-hooks/auth';
-
-export default function AdminDashboard() {
-  const [user] = useAuthState(auth);
-  const [firms, setFirms] = React.useState<PropFirm[]>([]);
-  const [users, setUsers] = React.useState<UserProfile[]>([]);
-  const [subscribers, setSubscribers] = React.useState<Subscriber[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [tab, setTab] = React.useState<'firms' | 'users' | 'subscribers'>('firms');
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [form, setForm] = React.useState<Partial<PropFirm>>({
-    name: '',
-    rating: 'medium',
-    websiteUrl: '',
-    startingBalance: '',
-    profitSplit: '',
-    maxLeverage: '',
-    description: '',
-    pros: [],
-    cons: [],
-  });
-  const [isAdmin, setIsAdmin] = React.useState(false);
+export const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = React.useState('bookings');
 
   React.useEffect(() => {
-    if (!user) return;
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (!isAdmin) {
+      navigate('/login');
+    }
+  }, [navigate]);
 
-    // Check if user is admin
-    const unsubAdmin = onSnapshot(doc(db, 'admins', user.uid), (snapshot) => {
-      const exists = snapshot.exists();
-      setIsAdmin(exists);
-      
-      if (!exists) {
-        setLoading(false);
-      }
-    }, (err) => {
-      console.error("Admin verification failed:", err);
-      setIsAdmin(false);
-      setLoading(false);
-    });
-
-    return () => unsubAdmin();
-  }, [user]);
-
-  React.useEffect(() => {
-    if (!user || !isAdmin) return;
-
-    // Fetch Firms
-    const unsubFirms = onSnapshot(query(collection(db, 'firms')), (snapshot) => {
-      setFirms(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PropFirm)));
-      setLoading(false);
-    }, (err) => {
-      console.error("Error fetching firms:", err);
-    });
-
-    // Fetch Users
-    const unsubUsers = onSnapshot(query(collection(db, 'users'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setUsers(snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as unknown as UserProfile)));
-    }, (err) => {
-      console.error("Error fetching users:", err);
-    });
-
-    // Fetch Subscribers
-    const unsubSubscribers = onSnapshot(query(collection(db, 'subscribers'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setSubscribers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subscriber)));
-    }, (err) => {
-      console.error("Error fetching subscribers:", err);
-    });
-
-    return () => {
-      unsubFirms();
-      unsubUsers();
-      unsubSubscribers();
-    };
-  }, [user, isAdmin]);
-
-  const handleSubmitFirm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const id = form.id || Math.random().toString(36).substring(7);
-    const slug = form.name?.toLowerCase().replace(/\s+/g, '-');
-    
-    await setDoc(doc(db, 'firms', id), {
-      ...form,
-      id,
-      slug,
-      updatedAt: new Date().toISOString(),
-    });
-    
-    setIsEditing(false);
-    setForm({
-      name: '',
-      rating: 'medium',
-      websiteUrl: '',
-      startingBalance: '',
-      profitSplit: '',
-      maxLeverage: '',
-      description: '',
-      pros: [],
-      cons: [],
-    });
+  const handleLogout = () => {
+    localStorage.removeItem('isAdmin');
+    navigate('/');
   };
 
-  const handleDeleteFirm = async (id: string) => {
-    if (confirm('Are you sure you want to delete this firm?')) {
-      await deleteDoc(doc(db, 'firms', id));
-    }
-  };
-
-  const handleDeleteAllReviews = async () => {
-    if (!confirm('CRITICAL ACTION: This will permanently purge ALL audit logs across ALL firms. This cannot be undone. Continue?')) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      let totalDeleted = 0;
-      for (const firm of firms) {
-        const reviewsSnapshot = await getDocs(collection(db, 'firms', firm.id, 'reviews'));
-        const deletePromises = reviewsSnapshot.docs.map(reviewDoc => 
-          deleteDoc(doc(db, 'firms', firm.id, 'reviews', reviewDoc.id))
-        );
-        await Promise.all(deletePromises);
-        totalDeleted += reviewsSnapshot.size;
-      }
-      alert(`System Purge Complete. Total Audit Logs Erased: ${totalDeleted}`);
-    } catch (err) {
-      console.error('Purge Failed:', err);
-      alert('System Error during purge operation.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isAdmin && !loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white p-6">
-        <div className="bg-zinc-900 border border-zinc-800 p-12 rounded-3xl max-w-lg text-center">
-          <XCircle className="w-16 h-16 text-rose-500 mx-auto mb-6" />
-          <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-4">Access Restricted.</h1>
-          <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest leading-relaxed">
-            Your terminal identity lacks necessary clearance for this protected layer. Unauthorized access attempts are logged.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const bookings = [
+    { id: 'BK-101', client: 'Aisha Abubakar', service: 'Knotless Braids', date: '2026-06-05', time: '10:00', status: 'pending', phone: '+234 801 234 5678' },
+    { id: 'BK-102', client: 'Fatima Musa', service: 'Spa Pedicure', date: '2026-06-05', time: '14:30', status: 'confirmed', phone: '+234 802 345 6789' },
+    { id: 'BK-103', client: 'Zainab Bello', service: 'Basic Cleanse Facial', date: '2026-06-06', time: '11:00', status: 'completed', phone: '+234 803 456 7890' },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 lg:px-10 py-16 bg-zinc-950">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16">
-        <div>
-          <h1 className="text-6xl font-black text-white italic uppercase tracking-tighter leading-none mb-4">Command<br />Center.</h1>
-          <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Global System Admin Mode
-          </p>
+    <div className="min-h-screen bg-[#FDF8F9] flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-rose-100 hidden lg:flex flex-col">
+        <div className="p-8 pb-12">
+          <div className="flex flex-col">
+            <span className="text-xl font-heading font-bold text-dark tracking-wide">HALIMA</span>
+            <span className="text-[8px] font-button tracking-[0.2em] text-primary -mt-1 uppercase">Admin Panel</span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2 p-1 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <button 
-            onClick={handleDeleteAllReviews}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/10 transition-all border border-rose-500/20"
-            title="Wipe ALL Reviews"
-          >
-            <AlertCircle size={14} /> Global Purge
-          </button>
-          <button 
-            onClick={() => setTab('firms')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${tab === 'firms' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
-          >
-            <LayoutGrid size={16} /> Asset Manager
-          </button>
-          <button 
-            onClick={() => setTab('users')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${tab === 'users' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
-          >
-            <Users size={16} /> Network Nodes
-          </button>
-          <button 
-            onClick={() => setTab('subscribers')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${tab === 'subscribers' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
-          >
-            <Mail size={16} /> Lead Ops
-          </button>
-        </div>
-      </div>
 
-      {tab === 'firms' ? (
-        <div className="space-y-12">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white">Active Database</h2>
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest px-8 py-4 rounded-xl flex items-center gap-2 transition-all"
+        <nav className="flex-grow px-4 space-y-2">
+          {[
+            { id: 'bookings', label: 'Bookings', icon: <Calendar size={18} /> },
+            { id: 'services', label: 'Services', icon: <Scissors size={18} /> },
+            { id: 'staff', label: 'Staff Management', icon: <Users size={18} /> },
+            { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-button text-sm font-semibold transition-all ${
+                activeTab === item.id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-dark/50 hover:bg-rose-50'
+              }`}
             >
-              <Plus size={16} /> Add New Asset
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-8">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl font-button text-sm font-bold text-rose-400 hover:bg-rose-50 transition-all underline decoration-rose-200"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-grow p-4 lg:p-12 overflow-y-auto">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+          <div>
+            <h1 className="text-4xl font-heading font-bold text-dark">
+              {activeTab === 'bookings' ? 'Daily Bookings' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            </h1>
+            <p className="text-dark/40 font-body mt-1">Gonan Ganye Studio Management System</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-dark/20" size={18} />
+              <input 
+                type="text" 
+                placeholder="Search..."
+                className="pl-12 pr-4 py-3 bg-white border border-rose-100 rounded-2xl outline-none focus:border-primary transition-all font-body text-sm min-w-[250px]"
+              />
+            </div>
+            <button className="bg-dark text-white p-3 rounded-2xl hover:bg-primary transition-all shadow-lg shadow-dark/10">
+              <Plus size={20} />
             </button>
           </div>
+        </header>
 
-          <div className="grid gap-4">
-            {firms.map((firm) => (
-              <div key={firm.id} className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl flex items-center justify-between hover:border-emerald-500/30 transition-all group">
-                <div className="flex items-center gap-6">
-                  <div className={`w-3 h-12 rounded-full ${firm.rating === 'good' ? 'bg-emerald-500' : firm.rating === 'medium' ? 'bg-blue-500' : 'bg-rose-500'}`} />
-                  <div>
-                    <h3 className="text-xl font-bold text-white uppercase tracking-tight">{firm.name}</h3>
-                    <span className="text-[10px] font-mono text-zinc-500 font-bold uppercase tracking-widest">ID: {firm.id} // SLUG: {firm.slug}</span>
-                  </div>
+        {activeTab === 'bookings' && (
+          <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              {[
+                { label: 'Pending Slots', value: '12', color: 'bg-rose-50 text-primary' },
+                { label: 'Today Confirmed', value: '24', color: 'bg-blue-50 text-blue-600' },
+                { label: 'Weekly Revenue', value: '₦142k', color: 'bg-emerald-50 text-emerald-600' },
+              ].map((stat, i) => (
+                <div key={i} className={`${stat.color} p-8 rounded-[40px] shadow-sm flex flex-col items-center text-center`}>
+                   <p className="text-3xl font-heading font-bold">{stat.value}</p>
+                   <p className="text-[10px] font-button uppercase tracking-widest opacity-60 mt-1">{stat.label}</p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => { setForm(firm); setIsEditing(true); }}
-                    className="p-3 bg-zinc-800 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors"
-                  >
-                    <Edit2 size={18} />
+              ))}
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-[40px] shadow-sm border border-rose-100 overflow-hidden">
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left">
+                   <thead>
+                     <tr className="bg-rose-50/50">
+                       <th className="px-8 py-5 text-[10px] font-button uppercase tracking-widest text-dark/40">Reference</th>
+                       <th className="px-8 py-5 text-[10px] font-button uppercase tracking-widest text-dark/40">Client</th>
+                       <th className="px-8 py-5 text-[10px] font-button uppercase tracking-widest text-dark/40">Service</th>
+                       <th className="px-8 py-5 text-[10px] font-button uppercase tracking-widest text-dark/40">Time</th>
+                       <th className="px-8 py-5 text-[10px] font-button uppercase tracking-widest text-dark/40">Status</th>
+                       <th className="px-8 py-5 text-[10px] font-button uppercase tracking-widest text-dark/40">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-rose-50">
+                     {bookings.map((booking) => (
+                       <tr key={booking.id} className="hover:bg-rose-50/20 transition-colors">
+                         <td className="px-8 py-6 font-mono text-xs text-dark/60">{booking.id}</td>
+                         <td className="px-8 py-6">
+                           <div className="flex flex-col">
+                             <span className="font-heading font-bold text-dark">{booking.client}</span>
+                             <span className="text-[10px] text-dark/40 font-button">{booking.phone}</span>
+                           </div>
+                         </td>
+                         <td className="px-8 py-6 text-sm font-body text-dark/80">{booking.service}</td>
+                         <td className="px-8 py-6">
+                            <div className="flex items-center gap-2 text-dark/60 text-xs">
+                              <Clock size={14} className="text-primary" />
+                              {booking.time}
+                            </div>
+                         </td>
+                         <td className="px-8 py-6">
+                           <span className={`px-4 py-1.5 rounded-full text-[10px] font-button font-bold uppercase tracking-wider ${
+                             booking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 
+                             booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                           }`}>
+                             {booking.status}
+                           </span>
+                         </td>
+                         <td className="px-8 py-6">
+                           <button className="text-dark/30 hover:text-primary transition-colors">
+                             <MoreVertical size={18} />
+                           </button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'services' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SERVICES.map(service => (
+              <div key={service.id} className="bg-white p-8 rounded-[40px] shadow-sm border border-rose-100 group hover:shadow-xl transition-all">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-xl font-heading font-bold text-dark">{service.name}</h3>
+                  <button className="text-primary hover:bg-rose-50 p-2 rounded-xl transition-colors">
+                    <Settings size={18} />
                   </button>
-                  <button 
-                    onClick={() => handleDeleteFirm(firm.id)}
-                    className="p-3 bg-zinc-800 text-zinc-400 hover:text-rose-500 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={18} />
+                </div>
+                <div className="space-y-2 mb-8">
+                  <p className="text-xs text-dark/40 font-button uppercase tracking-widest">{service.category} Service</p>
+                  <p className="text-sm font-body font-bold text-dark">Default Price: {service.priceRange}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="flex-grow py-3 bg-secondary rounded-xl text-xs font-button font-bold text-dark/60 hover:bg-rose-100 transition-all border border-rose-100">
+                    Edit Details
+                  </button>
+                  <button className="px-4 py-3 bg-rose-50 text-rose-400 rounded-xl hover:bg-rose-100 transition-all">
+                    <XCircle size={18} />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      ) : tab === 'users' ? (
-        <div className="space-y-8">
-          <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white">Verified Identities</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">UID Signature</th>
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">Email Terminal</th>
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">Alias</th>
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">Registered</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900">
-                {users.map((u) => (
-                  <tr key={u.uid} className="hover:bg-zinc-900/50 transition-colors">
-                    <td className="py-6 font-mono text-[10px] text-zinc-400">{u.uid}</td>
-                    <td className="py-6 text-sm font-bold text-white">{u.email}</td>
-                    <td className="py-6 text-sm font-bold text-emerald-500 italic uppercase">{u.displayName || 'ANONYMOUS'}</td>
-                    <td className="py-6 text-[10px] font-mono text-zinc-500">{u.createdAt?.substring(0, 10)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white">Newsletter Leads</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">Log ID</th>
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">Email Terminal</th>
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">Source</th>
-                  <th className="py-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">Timestamp</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900">
-                {subscribers.map((s) => (
-                  <tr key={s.id} className="hover:bg-zinc-900/50 transition-colors">
-                    <td className="py-6 font-mono text-[10px] text-zinc-400">{s.id.substring(0, 8)}...</td>
-                    <td className="py-6 text-sm font-bold text-white">{s.email}</td>
-                    <td className="py-6 text-xs font-bold text-emerald-500 uppercase italic">{s.source}</td>
-                    <td className="py-6 text-[10px] font-mono text-zinc-500">
-                      {s.createdAt?.toDate ? s.createdAt.toDate().toISOString().substring(0, 10) : 'Pending...'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Firm Edit Modal */}
-      <AnimatePresence>
-        {isEditing && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-20">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setIsEditing(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-[3rem] p-12 overflow-y-auto max-h-[85vh] shadow-2xl"
-            >
-              <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-8">Asset Initialization.</h2>
-              <form onSubmit={handleSubmitFirm} className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2 ml-1">Firm Name</label>
-                    <input 
-                      type="text" required value={form.name} onChange={(e) => setForm({...form, name: e.target.value})}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-bold focus:border-emerald-500 transition-colors outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2 ml-1">Rating Channel</label>
-                    <select 
-                      value={form.rating} onChange={(e) => setForm({...form, rating: e.target.value as any})}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-black uppercase tracking-widest outline-none focus:border-emerald-500 transition-colors"
-                    >
-                      <option value="good text-emerald-500">GOOD (Tier 1)</option>
-                      <option value="medium text-blue-500">MEDIUM (Tier 2)</option>
-                      <option value="bad text-rose-500">BAD (High Risk)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2 ml-1">Max Balance</label>
-                    <input 
-                      type="text" value={form.startingBalance} onChange={(e) => setForm({...form, startingBalance: e.target.value})}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-mono focus:border-emerald-500 outline-none"
-                      placeholder="$200,000"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2 ml-1">Website URL</label>
-                    <input 
-                      type="text" required value={form.websiteUrl} onChange={(e) => setForm({...form, websiteUrl: e.target.value})}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-bold focus:border-emerald-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2 ml-1">Profit Split</label>
-                    <input 
-                      type="text" value={form.profitSplit} onChange={(e) => setForm({...form, profitSplit: e.target.value})}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white font-bold focus:border-emerald-500 outline-none"
-                      placeholder="90%"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-2 ml-1">Asset Description</label>
-                    <textarea 
-                      rows={3} value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-white text-sm focus:border-emerald-500 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 pt-6 flex gap-4">
-                  <button type="submit" className="flex-1 bg-white text-black font-black uppercase py-5 rounded-xl hover:bg-emerald-400 transition-colors tracking-widest">
-                    SYNC_CHANGES
-                  </button>
-                  <button type="button" onClick={() => setIsEditing(false)} className="px-10 border border-zinc-800 text-zinc-500 font-black uppercase py-5 rounded-xl hover:text-white transition-all tracking-widest">
-                    ABORT
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
         )}
-      </AnimatePresence>
+      </main>
     </div>
   );
-}
+};

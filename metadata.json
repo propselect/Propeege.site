@@ -1,6 +1,8 @@
 {
-  "name": "Remix: PropEDGE.COM | Professional Prop Firm Reviews",
-  "description": "Discover and compare top-tier Forex prop firms with high-performance analytics, secure user community, and real-time rating systems.",
+  "name": "Halima Beauty Salon & Spa",
+  "description": "Premium beauty and wellness hub in Zaria, Nigeria. Offering hair care, skin care, nails, and spa services with a commitment to hygiene, trusted care, and client satisfaction.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
